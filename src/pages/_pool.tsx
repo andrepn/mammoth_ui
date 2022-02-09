@@ -1,9 +1,8 @@
 import React from "react";
 
-import styles from "./Pool.module.css";
-import { getErc20TokenAddress } from "../../services/token.service";
+import styles from "../styles/Pool.module.css";
+
 export const Pool = () => {
-  let res = getErc20TokenAddress("goerli-alpha");
   return (
     <div>
       <div className={styles.row}>
