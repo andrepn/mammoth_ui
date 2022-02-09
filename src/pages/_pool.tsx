@@ -1,8 +1,18 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { getPoolBalances } from "../services/fake-token.service";
 
 import styles from "../styles/Pool.module.css";
 
 export const Pool = () => {
+  const [poolbalances, changeBalances] = useState([0, 0, 0]);
+
+  useEffect(() => {
+    (async () => {
+      const res = await getPoolBalances();
+      changeBalances(res);
+    })();
+  }, [poolbalances]);
+
   return (
     <div>
       <div className={styles.row}>
@@ -15,13 +25,13 @@ export const Pool = () => {
         <div className={styles.infoContainer}>
           <h4>Pool Balance</h4>
           <div className={styles.row}>
-            Token One : <b>100</b>
+            Token One : <b>{poolbalances[0]}</b>
           </div>
           <div className={styles.row}>
-            Token Two : <b>50</b>
+            Token Two : <b>{poolbalances[1]}</b>
           </div>
           <div className={styles.row}>
-            Token Two : <b>250</b>
+            Token Two : <b>{poolbalances[3]}</b>
           </div>
         </div>
       </div>
