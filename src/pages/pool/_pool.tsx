@@ -6,7 +6,6 @@ import {
 } from "../../services/pool.service";
 
 import styles from "../../styles/Pool.module.css";
-import Header from "../_header";
 
 export const Pool = () => {
   const [poolbalances, changeBalances] = useState([0, 0, 0]);
@@ -29,7 +28,6 @@ export const Pool = () => {
   const swapHeaderClasses = [path == "swap" ? styles.activetab : ""];
   return (
     <div>
-      <Header />
       <div className={styles.row}>
         <div className={styles.infoContainer}>
           <h4>Your Balance</h4>
