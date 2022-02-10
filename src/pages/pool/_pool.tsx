@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import {
@@ -8,11 +9,18 @@ import {
 import styles from "../../styles/Pool.module.css";
 
 export const Pool = () => {
-  const [poolbalances, changeBalances] = useState([0, 0, 0]);
-  const [liquidityBalance, changeLiquidityBalance] = useState(1);
+  const [poolbalances, changeBalances] = useState([
+    BigNumber.from(0),
+    BigNumber.from(0),
+    BigNumber.from(0),
+  ]);
+  const [liquidityBalance, changeLiquidityBalance] = useState(
+    BigNumber.from(0)
+  );
   useEffect(() => {
     (async () => {
       const res = await getPoolBalances();
+      console.log(res);
       changeBalances(res);
     })();
 
@@ -20,7 +28,7 @@ export const Pool = () => {
       const res = await getLiquidityBalances();
       changeLiquidityBalance(res);
     })();
-  }, [poolbalances]);
+  }, []);
 
   const path = window.location.pathname.split("/")[2];
   const depositHeaderClasses = [path == "deposit" ? styles.activetab : ""];
@@ -32,19 +40,19 @@ export const Pool = () => {
         <div className={styles.infoContainer}>
           <h4>Your Balance</h4>
           <div className={styles.row}>
-            LP Token : <b>{liquidityBalance}</b>
+            LP Token : <b>{liquidityBalance.toString()}</b>
           </div>
         </div>
         <div className={styles.infoContainer}>
           <h4>Pool Balance</h4>
           <div className={styles.row}>
-            Token One : <b>{poolbalances[0]}</b>
+            Token One : <b>{poolbalances[0].toString()}</b>
           </div>
           <div className={styles.row}>
-            Token Two : <b>{poolbalances[1]}</b>
+            Token Two : <b>{poolbalances[1].toString()}</b>
           </div>
           <div className={styles.row}>
-            Token Three : <b>{poolbalances[2]}</b>
+            Token Three : <b>{poolbalances[2].toString()}</b>
           </div>
         </div>
       </div>
