@@ -3,19 +3,19 @@ import { compileCalldata, number, stark, uint256 } from "starknet";
 import { utils } from "ethers";
 
 const tokenOne = {
-  address: "0x06a6a94887bf9bdfaf3b080a4a8769a3ddeec99240cf24b7f484939b4398e390",
+  address: "0x05e3dbd111ae4b27cdc8e8ac03fc0cd45d6873f109979c9461f03df7d805901a",
   name: "testUSDC",
   symbol: "TUSDC",
 };
 
 const tokenTwo = {
-  address: "0x02b9f472382e960f9e6487bcad56892c528574c71f10b004c4a816468b88bcf6",
+  address: "0x05b8094b3a64e727a6d1a24ee368929bc76b3611b5b50491bfb76ae60411825d",
   name: "FantieCoin",
   symbol: "FC",
 };
 
 const tokenThree = {
-  address: "0x027a7652ab6290ccab4666dd695fbdca1751478439464fe07c345b9a18b70af3",
+  address: "0x0723c4d60564756107a2f5aa405c20288fad6951c652f57ed5ccbaa6da17badc",
   name: "testETH",
   symbol: "TEETH",
 };
@@ -23,11 +23,12 @@ const tokenThree = {
 export const tokens = [tokenOne, tokenTwo, tokenThree];
 
 const liquidityTokenAddress =
-  "0x03fbe61a73d60af114288dd919ee51deb7599b27e842ac16b8c8967776eec432";
+  "0x024ab0a192c95cba8afcbed9951009a816b48c4835dfa4070e4c3878432dd708";
 const poolAddress =
-  "0x0209223018b9ed8a4c6968c56e82861438967793c3f4c9005ff82164c2bb3e83";
+  "0x06a375089b7d770df6d92c2aa6c45bc4c2051da9070f261bec577d04a67414cf";
 
-const proxyAddress = "";
+const proxyAddress =
+  "0x0496ac0b1dd0bcec538f696cd171623bfb5557142bacf38f1a7c4e151cd40651";
 
 const mintSelector = stark.getSelectorFromName("mint");
 
@@ -42,6 +43,8 @@ const depositAmountSelector = stark.getSelectorFromName(
 const withdrawAmountSelector = stark.getSelectorFromName(
   "view_single_out_given_pool_in"
 );
+
+const depositSelector = stark.getSelectorFromName("mammoth_deposit");
 
 function getUint256CalldataFromBN(bn: number.BigNumberish) {
   return { type: "struct" as const, ...uint256.bnToUint256(bn) };
@@ -61,6 +64,28 @@ export const mintToken = async (tokenIndex: number): Promise<any> => {
     mintSelector,
     compileCalldata({
       receiver: number.toBN(activeAccount).toString(), //receiver (self)
+      amount: getUint256CalldataFromBN(utils.parseUnits("10", 18).toString()), // amount
+    })
+  );
+};
+
+export const depositPool = async (
+  amount: string,
+  tokenIndex: number
+): Promise<any> => {
+  const starknet = getStarknet();
+
+  const [activeAccount] = await starknet.enable();
+
+  // checks that enable succeeded
+  if (starknet.isConnected === false)
+    throw Error("starknet wallet not connected");
+
+  return await starknet.signer.invokeFunction(
+    proxyAddress,
+    depositSelector,
+    compileCalldata({
+      user_address: number.toBN(activeAccount).toString(), //receiver (self)
       amount: getUint256CalldataFromBN(utils.parseUnits("10", 18).toString()), // amount
     })
   );
@@ -104,8 +129,13 @@ export const getPoolBalances = async (): Promise<any> => {
     tokenTwoBalance,
     tokenThreeBalance,
   ]);
-
-  return [balances];
+  console.log(balances);
+  return balances.map((balance) => {
+    return uint256.uint256ToBN({
+      low: balance.result[1],
+      high: balance.result[0],
+    });
+  });
 };
 
 export const getLiquidityBalances = async (): Promise<any> => {
@@ -125,7 +155,10 @@ export const getLiquidityBalances = async (): Promise<any> => {
     }),
   });
 
-  return liquidityBalance;
+  return uint256.uint256ToBN({
+    low: liquidityBalance.result[1],
+    high: liquidityBalance.result[0],
+  });
 };
 
 // ERC 20 Swap amount

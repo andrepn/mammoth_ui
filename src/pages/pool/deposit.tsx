@@ -30,6 +30,9 @@ const Deposit = () => {
     changeIndex(parseInt(val));
   };
 
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+  };
   return (
     <div>
       <Pool />
