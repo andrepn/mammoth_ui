@@ -41,6 +41,7 @@
   --width-content: 1080px;
 }
 
+/**
 @media (prefers-color-scheme: dark) {
   :root {
     --color: #0097fc;
@@ -56,6 +57,7 @@
     --color-text-secondary: #aaa;
   }
 }
+**/
 
 /* Layout */
 article aside {
@@ -428,7 +430,6 @@ select,
 textarea {
   border: 1px solid var(--color-bg-secondary);
   border-radius: var(--border-radius);
-  margin-bottom: 1rem;
   padding: 0.4rem 0.8rem;
 }
 

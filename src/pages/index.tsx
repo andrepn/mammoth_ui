@@ -1,5 +1,6 @@
 import type { NextPage } from "next";
 import Head from "next/head";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { TokenDapp } from "../components/TokenDapp";
@@ -13,7 +14,7 @@ import {
   walletAddress,
 } from "../services/wallet.service";
 import styles from "../styles/Home.module.css";
-import { Pool } from "./_pool";
+import { Pool } from "./pool/_pool";
 
 const Home: NextPage = () => {
   const [isConnected, setIsConnected] = useState(isWalletConnected());
@@ -55,7 +56,12 @@ const Home: NextPage = () => {
             <h3 style={{ margin: 0 }}>
               Url: <code>{networkUrl()}</code>
             </h3>
-            <Pool />
+            <div>
+              Wallet Connected
+              <Link href={`/pool/deposit`}>
+                <a>continue to the pool</a>
+              </Link>
+            </div>
           </>
         ) : (
           <>

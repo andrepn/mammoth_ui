@@ -39,10 +39,25 @@
 
 .textbox {
   font-size: 32px;
-  padding: 2px;
-  width: 64px;
-  text-align: center;
+  padding-left: 16px;
+  text-align: left;
+  margin-top: 4px;
+}
+
+.textspan {
+  font-size: 20px;
   margin-right: 4px;
+}
+
+.textspansmall {
+  font-size: 32px;
+  margin-right: 4px;
+}
+
+.textspangrey {
+  font-size: 32px;
+  margin-right: 4px;
+  color: #999;
 }
 
 .infoContainer {
@@ -70,6 +85,10 @@
   width: 100%;
 }
 
+.activetab {
+  background-color: lightgray;
+}
+
 .asyncButton {
   composes: button;
   position: relative;
@@ -92,4 +111,22 @@
   width: 0%;
   opacity: 1;
   transition: 0s;
+}
+
+.transactionPart {
+  display: flex;
+  flex-direction: column;
+  width: 500px;
+}
+
+.recievebox {
+  font-size: 32px;
+  padding-left: 16px;
+  text-align: left;
+  margin-top: 4px;
+  border: solid 1px #e9e9e9;
+  border-radius: 8px;
+
+  display: flex;
+  justify-content: space-between;
 }
