@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   getLiquidityBalances,
   getPoolBalances,
+  tokens,
 } from "../../services/pool.service";
 
 import styles from "../../styles/Pool.module.css";
@@ -14,9 +15,11 @@ export const Pool = () => {
     BigNumber.from(0),
     BigNumber.from(0),
   ]);
+
   const [liquidityBalance, changeLiquidityBalance] = useState(
     BigNumber.from(0)
   );
+
   useEffect(() => {
     (async () => {
       const res = await getPoolBalances();
@@ -46,13 +49,13 @@ export const Pool = () => {
         <div className={styles.infoContainer}>
           <h4>Pool Balance</h4>
           <div className={styles.row}>
-            Token One : <b>{poolbalances[0].toString()}</b>
+            {tokens[0].name} : <b>{poolbalances[0].toString()}</b>
           </div>
           <div className={styles.row}>
-            Token Two : <b>{poolbalances[1].toString()}</b>
+            {tokens[1].name} : <b>{poolbalances[1].toString()}</b>
           </div>
           <div className={styles.row}>
-            Token Three : <b>{poolbalances[2].toString()}</b>
+            {tokens[2].name} : <b>{poolbalances[2].toString()}</b>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { getStarknet } from "@argent/get-starknet";
 import { compileCalldata, number, stark, uint256 } from "starknet";
-import { utils } from "ethers";
+import { BigNumber, utils } from "ethers";
 
 const tokenOne = {
   address: "0x05e3dbd111ae4b27cdc8e8ac03fc0cd45d6873f109979c9461f03df7d805901a",
@@ -85,8 +85,10 @@ export const depositPool = async (
     proxyAddress,
     depositSelector,
     compileCalldata({
+      amount_to_deposit: amount,
       user_address: number.toBN(activeAccount).toString(), //receiver (self)
-      amount: getUint256CalldataFromBN(utils.parseUnits("10", 18).toString()), // amount
+      pool_address: poolAddress,
+      erc20_address: tokens[tokenIndex].address,
     })
   );
 };
@@ -132,8 +134,8 @@ export const getPoolBalances = async (): Promise<any> => {
   console.log(balances);
   return balances.map((balance) => {
     return uint256.uint256ToBN({
-      low: balance.result[1],
-      high: balance.result[0],
+      low: balance.result[0],
+      high: balance.result[1],
     });
   });
 };
@@ -200,8 +202,10 @@ export const getDepositERC20Amount = async (
   // checks that enable succeeded
   if (starknet.isConnected === false)
     throw Error("starknet wallet not connected");
+  console.log(tokenInIndex);
+  console.log(amountIn);
 
-  return await starknet.provider.callContract({
+  const res = await starknet.provider.callContract({
     contract_address: proxyAddress,
     entry_point_selector: depositAmountSelector,
     calldata: compileCalldata({
@@ -210,6 +214,8 @@ export const getDepositERC20Amount = async (
       erc20_address: tokens[tokenInIndex].address,
     }),
   });
+  console.log(res);
+  return res;
 };
 
 // LP Token withdraw to erc20 amount

@@ -2,12 +2,19 @@ import { Pool } from "./_pool";
 import styles from "../../styles/Pool.module.css";
 import React, { useState } from "react";
 import { BigNumber } from "ethers";
-import { getDepositERC20Amount } from "../../services/pool.service";
+import {
+  depositPool,
+  getDepositERC20Amount,
+} from "../../services/pool.service";
+import LoadingIndicator from "../../components/Indicator";
+import { waitForTransaction } from "../../services/wallet.service";
 
 const Deposit = () => {
   const [depositAmount, changeAmount] = useState(BigNumber.from("0"));
   const [LPAmount, changeLPAmount] = useState(BigNumber.from("0"));
   const [tokenIndex, changeIndex] = useState(0);
+  const [isLoading, changeIsLoading] = useState(false);
+  const [txComplete, changeTxComplete] = useState(false);
 
   const displayValue =
     depositAmount.toString() === "0" ? "0" : depositAmount.toString();
@@ -15,8 +22,8 @@ const Deposit = () => {
   const handleInputChange = async (e: any) => {
     e.preventDefault();
     const val = e.target.value;
-    const amount = getDepositERC20Amount(tokenIndex, val);
-    changeLPAmount(BigNumber.from(amount));
+    // const amount = await getDepositERC20Amount(tokenIndex, val);
+    //changeLPAmount(BigNumber.from(amount));
     if (val.length) {
       changeAmount(BigNumber.from(val));
     } else {
@@ -32,9 +39,30 @@ const Deposit = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+    changeIsLoading(true);
+    const tx = await depositPool(depositAmount.toString(), tokenIndex);
+    const completed = await waitForTransaction(tx.transaction_hash);
+
+    changeIsLoading(false);
+    changeTxComplete(true);
   };
+
+  const handleIndicatorClose = () => {
+    changeTxComplete(false);
+  };
+
   return (
     <div>
+      {isLoading ? (
+        <LoadingIndicator msg={"Awaiting Deposit"} isLoading={true} />
+      ) : null}
+      {txComplete ? (
+        <LoadingIndicator
+          closeable={true}
+          msg={"Deposit Complete"}
+          onClose={handleIndicatorClose}
+        />
+      ) : null}
       <Pool />
       <div className={styles.row}>
         <div className={styles.transactionPart}>
@@ -68,7 +96,7 @@ const Deposit = () => {
         </div>
       </div>
       <div className={styles.row}>
-        <button className={""}>Deposit</button>
+        <button onClick={handleSubmit}>Deposit</button>
       </div>
     </div>
   );
