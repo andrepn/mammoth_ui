@@ -62,7 +62,8 @@
   border-width: 1px;
   border-color: black;
   height: 300px;
-  width: 200px;
+  min-width: 200px;
+  max-width: 400px;
   margin: 10px;
 }
 
@@ -127,4 +128,10 @@
 
   display: flex;
   justify-content: space-between;
+}
+
+.smallbtn {
+  width: 40px;
+  height: 40px;
+  padding: 0px;
 }

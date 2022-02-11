@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   getLiquidityBalances,
   getPoolBalances,
+  mintToken,
   tokens,
 } from "../../services/pool.service";
 
@@ -33,6 +34,9 @@ export const Pool = () => {
     })();
   }, []);
 
+  const handleMint = async (tokenIndex: number) => {
+    await mintToken(tokenIndex);
+  };
   const path = window.location.pathname.split("/")[2];
   const depositHeaderClasses = [path == "deposit" ? styles.activetab : ""];
   const withdrawHeaderClasses = [path == "withdraw" ? styles.activetab : ""];
@@ -53,13 +57,22 @@ export const Pool = () => {
             <h4>Pool Balance</h4>
           </div>
           <div className={styles.row}>
-            {tokens[0].name} : <b>{poolbalances[0].toString()}</b>
+            {tokens[0].name} : <b>{poolbalances[0].toString()}</b>{" "}
+            <button className={styles.smallbtn} onClick={() => handleMint(0)}>
+              Mint
+            </button>
           </div>
           <div className={styles.row}>
-            {tokens[1].name} : <b>{poolbalances[1].toString()}</b>
+            {tokens[1].name} : <b>{poolbalances[1].toString()}</b>{" "}
+            <button className={styles.smallbtn} onClick={() => handleMint(1)}>
+              Mint
+            </button>
           </div>
           <div className={styles.row}>
-            {tokens[2].name} : <b>{poolbalances[2].toString()}</b>
+            {tokens[2].name} : <b>{poolbalances[2].toString()}</b>{" "}
+            <button className={styles.smallbtn} onClick={() => handleMint(2)}>
+              Mint
+            </button>
           </div>
         </div>
       </div>

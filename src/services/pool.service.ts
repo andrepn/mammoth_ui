@@ -64,7 +64,7 @@ export const mintToken = async (tokenIndex: number): Promise<any> => {
     mintSelector,
     compileCalldata({
       receiver: number.toBN(activeAccount).toString(), //receiver (self)
-      amount: getUint256CalldataFromBN(utils.parseUnits("10", 18).toString()), // amount
+      amount: getUint256CalldataFromBN(1000), // amount
     })
   );
 };
