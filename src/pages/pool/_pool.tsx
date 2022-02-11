@@ -41,13 +41,17 @@ export const Pool = () => {
     <div>
       <div className={styles.row}>
         <div className={styles.infoContainer}>
-          <h4>Your Balance</h4>
+          <div className={styles.row}>
+            <h4>Your Balance</h4>
+          </div>
           <div className={styles.row}>
             LP Token : <b>{liquidityBalance.toString()}</b>
           </div>
         </div>
         <div className={styles.infoContainer}>
-          <h4>Pool Balance</h4>
+          <div className={styles.row}>
+            <h4>Pool Balance</h4>
+          </div>
           <div className={styles.row}>
             {tokens[0].name} : <b>{poolbalances[0].toString()}</b>
           </div>

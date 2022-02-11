@@ -13,7 +13,7 @@ const defaultProps: indicatorProps = {
   closeable: false,
   onClose: () => {},
 };
-const LoadingIndicator = (props: indicatorProps) => {
+const Indicator = (props: indicatorProps) => {
   const { msg, isLoading, closeable, onClose } = { ...defaultProps, ...props };
 
   return (
@@ -25,4 +25,4 @@ const LoadingIndicator = (props: indicatorProps) => {
   );
 };
 
-export default LoadingIndicator;
+export default Indicator;
