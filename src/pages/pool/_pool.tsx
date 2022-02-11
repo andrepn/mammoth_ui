@@ -7,7 +7,7 @@ import {
   mintToken,
   tokens,
 } from "../../services/pool.service";
-
+import Image from "next/image";
 import styles from "../../styles/Pool.module.css";
 
 export const Pool = () => {
@@ -37,6 +37,10 @@ export const Pool = () => {
   const handleMint = async (tokenIndex: number) => {
     await mintToken(tokenIndex);
   };
+
+  const handleCopy = (tokenIndex: number) => {
+    navigator.clipboard.writeText(tokens[tokenIndex].address);
+  };
   const path = window.location.pathname.split("/")[2];
   const depositHeaderClasses = [path == "deposit" ? styles.activetab : ""];
   const withdrawHeaderClasses = [path == "withdraw" ? styles.activetab : ""];
@@ -61,17 +65,41 @@ export const Pool = () => {
             <button className={styles.smallbtn} onClick={() => handleMint(0)}>
               Mint
             </button>
+            <button className={styles.smallbtn} onClick={() => handleCopy(0)}>
+              <Image
+                src="/clipboard.svg"
+                width="20"
+                height="20"
+                alt="copy the first token address"
+              />
+            </button>
           </div>
           <div className={styles.row}>
             {tokens[1].name} : <b>{poolbalances[1].toString()}</b>{" "}
             <button className={styles.smallbtn} onClick={() => handleMint(1)}>
               Mint
             </button>
+            <button className={styles.smallbtn} onClick={() => handleCopy(1)}>
+              <Image
+                src="/clipboard.svg"
+                width="20"
+                height="20"
+                alt="copy the first token address"
+              />
+            </button>
           </div>
           <div className={styles.row}>
             {tokens[2].name} : <b>{poolbalances[2].toString()}</b>{" "}
             <button className={styles.smallbtn} onClick={() => handleMint(2)}>
               Mint
+            </button>
+            <button className={styles.smallbtn} onClick={() => handleCopy(2)}>
+              <Image
+                src="/clipboard.svg"
+                width="20"
+                height="20"
+                alt="copy the first token address"
+              />
             </button>
           </div>
         </div>
