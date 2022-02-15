@@ -1,34 +1,35 @@
 import { getStarknet } from "@argent/get-starknet";
 import { compileCalldata, number, stark, uint256 } from "starknet";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, BigNumberish, utils } from "ethers";
+import { bnToUint256 } from "starknet/dist/utils/uint256";
+import { waitForTransaction } from "./wallet.service";
 
 const tokenOne = {
-  address: "0x05e3dbd111ae4b27cdc8e8ac03fc0cd45d6873f109979c9461f03df7d805901a",
-  name: "testUSDC",
-  symbol: "TUSDC",
-};
-
-const tokenTwo = {
-  address: "0x05b8094b3a64e727a6d1a24ee368929bc76b3611b5b50491bfb76ae60411825d",
+  address: "0x032b911608a90366220ebbabd99f7a57b4b315804605e241920c37bcd74d76fc",
   name: "FantieCoin",
   symbol: "FC",
 };
 
+const tokenTwo = {
+  address: "0x067e22e3d37bc747b6444efe1e39b9a06f6f4610a77a7a87866b328467699afc",
+
+  name: "testUSDC",
+  symbol: "TUSDC",
+};
+
 const tokenThree = {
-  address: "0x0723c4d60564756107a2f5aa405c20288fad6951c652f57ed5ccbaa6da17badc",
+  address: "0x012fd485450708217ffca7b9dd17e0323a3ea0299ccef5d8411577f120293977",
   name: "testETH",
   symbol: "TEETH",
 };
 
 export const tokens = [tokenOne, tokenTwo, tokenThree];
 
-const liquidityTokenAddress =
-  "0x024ab0a192c95cba8afcbed9951009a816b48c4835dfa4070e4c3878432dd708";
-const poolAddress =
-  "0x06a375089b7d770df6d92c2aa6c45bc4c2051da9070f261bec577d04a67414cf";
+const routerAddress =
+  "0x07334817d544f8dc403da10e2b6732289e7abc5b04f0c17435e105bd5bd42195";
 
-const proxyAddress =
-  "0x0496ac0b1dd0bcec538f696cd171623bfb5557142bacf38f1a7c4e151cd40651";
+const poolAddress =
+  "0x055dfb8a071d3ea23e63c3264edc0fecbde4162634e019c41c58a841db5689e6";
 
 const mintSelector = stark.getSelectorFromName("mint");
 
@@ -44,12 +45,21 @@ const withdrawAmountSelector = stark.getSelectorFromName(
   "view_single_out_given_pool_in"
 );
 
+const approveERC20Selector = stark.getSelectorFromName("approve");
+const allowanceERC20Selector = stark.getSelectorFromName("allowance");
 const depositSelector = stark.getSelectorFromName("mammoth_deposit");
 
 function getUint256CalldataFromBN(bn: number.BigNumberish) {
   return { type: "struct" as const, ...uint256.bnToUint256(bn) };
 }
 
+function normalizeNumber(x: BigNumberish) {
+  return BigNumber.from(x).mul("1000").toString();
+}
+
+function normalizeAndUint256(x: BigNumberish) {
+  return getUint256CalldataFromBN(normalizeNumber(x));
+}
 export const mintToken = async (tokenIndex: number): Promise<any> => {
   const starknet = getStarknet();
 
@@ -64,9 +74,56 @@ export const mintToken = async (tokenIndex: number): Promise<any> => {
     mintSelector,
     compileCalldata({
       receiver: number.toBN(activeAccount).toString(), //receiver (self)
-      amount: getUint256CalldataFromBN(1000), // amount
+      amount: getUint256CalldataFromBN(100000), // amount
     })
   );
+};
+
+export const getTokeAllowance = async (tokenIndex: number) => {
+  const starknet = getStarknet();
+
+  const [activeAccount] = await starknet.enable();
+
+  // checks that enable succeeded
+  if (starknet.isConnected === false)
+    throw Error("starknet wallet not connected");
+
+  const res = await starknet.signer.callContract({
+    contract_address: tokens[tokenIndex].address,
+    entry_point_selector: allowanceERC20Selector,
+    calldata: compileCalldata({
+      owner: activeAccount,
+      spender: routerAddress,
+    }),
+  });
+  return uint256.uint256ToBN({
+    low: res.result[0],
+    high: res.result[1],
+  });
+};
+
+export const approveToken = async (
+  tokenIndex: number,
+  amount: string = "10000000"
+): Promise<any> => {
+  const starknet = getStarknet();
+
+  const [activeAccount] = await starknet.enable();
+
+  // checks that enable succeeded
+  if (starknet.isConnected === false)
+    throw Error("starknet wallet not connected");
+
+  let uintAmount = normalizeAndUint256(amount);
+  const tx = await starknet.signer.invokeFunction(
+    tokens[tokenIndex].address,
+    approveERC20Selector,
+    compileCalldata({
+      spender: routerAddress,
+      amount: uintAmount,
+    })
+  );
+  await waitForTransaction(tx.transaction_hash);
 };
 
 export const depositPool = async (
@@ -82,11 +139,11 @@ export const depositPool = async (
     throw Error("starknet wallet not connected");
 
   return await starknet.signer.invokeFunction(
-    proxyAddress,
+    routerAddress,
     depositSelector,
     compileCalldata({
-      amount_to_deposit: amount,
-      user_address: number.toBN(activeAccount).toString(), //receiver (self)
+      amount: normalizeAndUint256(amount),
+      user_address: activeAccount,
       pool_address: poolAddress,
       erc20_address: tokens[tokenIndex].address,
     })
@@ -131,7 +188,7 @@ export const getPoolBalances = async (): Promise<any> => {
     tokenTwoBalance,
     tokenThreeBalance,
   ]);
-  console.log(balances);
+
   return balances.map((balance) => {
     return uint256.uint256ToBN({
       low: balance.result[0],
@@ -150,16 +207,16 @@ export const getLiquidityBalances = async (): Promise<any> => {
     throw Error("starknet wallet not connected");
 
   const liquidityBalance = await starknet.provider.callContract({
-    contract_address: liquidityTokenAddress,
+    contract_address: poolAddress,
     entry_point_selector: balanceOfSelecter,
     calldata: compileCalldata({
       account: number.toBN(activeAccount).toString(), //receiver (self)
     }),
   });
-
+  console.log(liquidityBalance);
   return uint256.uint256ToBN({
-    low: liquidityBalance.result[1],
-    high: liquidityBalance.result[0],
+    low: liquidityBalance.result[0],
+    high: liquidityBalance.result[1],
   });
 };
 
@@ -179,7 +236,7 @@ export const getSwapAmount = async (
     throw Error("starknet wallet not connected");
 
   return await starknet.provider.callContract({
-    contract_address: proxyAddress,
+    contract_address: routerAddress,
     entry_point_selector: swapAmountSelector,
     calldata: compileCalldata({
       amount_in: amountIn,
@@ -202,20 +259,19 @@ export const getDepositERC20Amount = async (
   // checks that enable succeeded
   if (starknet.isConnected === false)
     throw Error("starknet wallet not connected");
-  console.log(tokenInIndex);
-  console.log(amountIn);
 
   const res = await starknet.provider.callContract({
-    contract_address: proxyAddress,
+    contract_address: poolAddress,
     entry_point_selector: depositAmountSelector,
     calldata: compileCalldata({
-      amount_to_deposit: amountIn,
-      pool_address: poolAddress,
+      amount_to_deposit: getUint256CalldataFromBN(normalizeNumber(amountIn)),
       erc20_address: tokens[tokenInIndex].address,
     }),
   });
-  console.log(res);
-  return res;
+  return uint256.uint256ToBN({
+    low: res.result[0],
+    high: res.result[1],
+  });
 };
 
 // LP Token withdraw to erc20 amount
@@ -232,7 +288,7 @@ export const getWithdrawERC20Amount = async (
     throw Error("starknet wallet not connected");
 
   return await starknet.provider.callContract({
-    contract_address: proxyAddress,
+    contract_address: routerAddress,
     entry_point_selector: withdrawAmountSelector,
     calldata: compileCalldata({
       pool_amount_in: amountIn,

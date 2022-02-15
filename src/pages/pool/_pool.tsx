@@ -24,7 +24,6 @@ export const Pool = () => {
   useEffect(() => {
     (async () => {
       const res = await getPoolBalances();
-      console.log(res);
       changeBalances(res);
     })();
 
@@ -41,7 +40,12 @@ export const Pool = () => {
   const handleCopy = (tokenIndex: number) => {
     navigator.clipboard.writeText(tokens[tokenIndex].address);
   };
-  const path = window.location.pathname.split("/")[2];
+
+  let path = "";
+  if (typeof window !== "undefined") {
+    path = window.location.pathname.split("/")[2];
+  }
+
   const depositHeaderClasses = [path == "deposit" ? styles.activetab : ""];
   const withdrawHeaderClasses = [path == "withdraw" ? styles.activetab : ""];
   const swapHeaderClasses = [path == "swap" ? styles.activetab : ""];
