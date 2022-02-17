@@ -14,7 +14,6 @@ import {
   walletAddress,
 } from "../services/wallet.service";
 import styles from "../styles/Home.module.css";
-import { Pool } from "./pool/_pool";
 
 const Home: NextPage = () => {
   const [isConnected, setIsConnected] = useState(isWalletConnected());

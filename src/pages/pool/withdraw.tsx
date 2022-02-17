@@ -1,4 +1,4 @@
-import { Pool } from "./_pool";
+import Pool from "./_pool";
 import styles from "../../styles/Pool.module.css";
 import React, { useCallback, useEffect, useState } from "react";
 import { BigNumber } from "ethers";

@@ -11,7 +11,7 @@ import Image from "next/image";
 import styles from "../../styles/Pool.module.css";
 import { toFloatingPoint } from "../../core/floating-point";
 
-export const Pool = () => {
+const Pool = () => {
   const [poolbalances, changeBalances] = useState([
     BigNumber.from(0),
     BigNumber.from(0),
@@ -135,3 +135,5 @@ export const Pool = () => {
     </div>
   );
 };
+
+export default Pool;
