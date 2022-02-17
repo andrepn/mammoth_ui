@@ -60,7 +60,7 @@ export const Pool = () => {
             <h4>Your Balance</h4>
           </div>
           <div className={styles.row}>
-            LP Token : <b>{liquidityBalance.toString()}</b>
+            LP Token : &nbsp; <b>{liquidityBalance.toString()}</b>
           </div>
         </div>
         <div className={styles.infoContainer}>
@@ -68,7 +68,7 @@ export const Pool = () => {
             <h4>Pool Balance</h4>
           </div>
           <div className={styles.row}>
-            {tokens[0].name} : <b>{poolbalances[0].toString()}</b>{" "}
+            {tokens[0].name} :&nbsp; <b>{poolbalances[0].toString()}</b>{" "}
             <button className={styles.smallbtn} onClick={() => handleMint(0)}>
               Mint
             </button>
@@ -82,7 +82,7 @@ export const Pool = () => {
             </button>
           </div>
           <div className={styles.row}>
-            {tokens[1].name} : <b>{poolbalances[1].toString()}</b>{" "}
+            {tokens[1].name} :&nbsp; <b>{poolbalances[1].toString()}</b>{" "}
             <button className={styles.smallbtn} onClick={() => handleMint(1)}>
               Mint
             </button>
@@ -96,7 +96,7 @@ export const Pool = () => {
             </button>
           </div>
           <div className={styles.row}>
-            {tokens[2].name} : <b>{poolbalances[2].toString()}</b>{" "}
+            {tokens[2].name} :&nbsp; <b>{poolbalances[2].toString()}</b>{" "}
             <button className={styles.smallbtn} onClick={() => handleMint(2)}>
               Mint
             </button>
