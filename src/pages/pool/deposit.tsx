@@ -45,9 +45,6 @@ const Deposit = () => {
     })();
   });
 
-  const displayValue =
-    depositAmount.toString() === "0" ? "0" : depositAmount.toString();
-
   const predictDepositResult = async (number: string, decimal: string) => {
     const total = BigNumber.from(number).mul(10000).add(decimalToBN(decimal));
     const amount = await getDepositERC20Amount(tokenIndex, total.toString());
@@ -103,8 +100,7 @@ const Deposit = () => {
         depositAmount + padDecimal(depositAmountDecimal),
         tokenIndex
       );
-
-      const completed = await waitForTransaction(tx.transaction_hash);
+      await waitForTransaction(tx.transaction_hash);
     } catch (e) {
       success = false;
       changeFailMsg("Deposit failed");

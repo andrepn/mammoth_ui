@@ -10,26 +10,54 @@ import {
 } from "../../services/pool.service";
 import LoadingIndicator from "../../components/Indicator";
 import { waitForTransaction } from "../../services/wallet.service";
+import {
+  decimalToBN,
+  padDecimal,
+  toFloatingPoint,
+} from "../../core/floating-point";
 
 const Withdraw = () => {
-  const [withdrawAmount, changeAmount] = useState(BigNumber.from("0"));
-  const [LPAmount, changeLPAmount] = useState(BigNumber.from("0"));
+  const [withdrawAmount, changeAmount] = useState("0");
+  const [withdrawAmountDecimal, changeAmountDecimal] = useState("");
+  const [LPAmount, changeLPAmount] = useState("0");
   const [tokenIndex, changeIndex] = useState(0);
   const [isLoading, changeIsLoading] = useState(false);
   const [txComplete, changeTxComplete] = useState(false);
+  const [failMsg, changeFailMsg] = useState("");
 
-  const displayValue =
-    withdrawAmount.toString() === "0" ? "0" : withdrawAmount.toString();
+  const predictWithdrawResult = async (number: string, decimal: string) => {
+    const total = BigNumber.from(number).mul(10000).add(decimalToBN(decimal));
+    const amount = await getWithdrawERC20Amount(tokenIndex, total.toString());
+    changeLPAmount(toFloatingPoint(amount.toString()));
+  };
 
   const handleInputChange = async (e: any) => {
     e.preventDefault();
     const val = e.target.value;
-    if (val.length > 0 && !BigNumber.from(val).eq(0)) {
-      changeAmount(BigNumber.from(val));
-      const amount = await getWithdrawERC20Amount(tokenIndex, val);
-      changeLPAmount(amount);
+    const parts = val.split(".");
+
+    const hasDecmial = withdrawAmountDecimal.length;
+
+    if (val.length > 0) {
+      let newNumber = "0";
+      if (parts[0].length) {
+        newNumber = parts[0];
+      }
+      changeAmount(newNumber);
+
+      let newDecimal = "";
+
+      if (parts[1]?.length) {
+        newDecimal = parts[1].substring(0, 4);
+      } else if (parts[1] === undefined && hasDecmial) {
+        newDecimal = "";
+      }
+      changeAmountDecimal(newDecimal);
+
+      await predictWithdrawResult(newNumber, newDecimal);
     } else {
-      changeAmount(BigNumber.from("0"));
+      changeAmount("0");
+      changeAmountDecimal("");
     }
   };
 
@@ -38,6 +66,7 @@ const Withdraw = () => {
     const val = e.target.value;
     //await tokenApproval();
     changeIndex(parseInt(val));
+    await predictWithdrawResult(withdrawAmount, withdrawAmountDecimal);
   };
 
   const handleSubmit = async (e: any) => {
@@ -45,12 +74,14 @@ const Withdraw = () => {
     changeIsLoading(true);
     let success = true;
     try {
-      const tx = await withdrawPool(withdrawAmount.toString(), tokenIndex);
-
-      const completed = await waitForTransaction(tx.transaction_hash);
+      const tx = await withdrawPool(
+        withdrawAmount + padDecimal(withdrawAmountDecimal),
+        tokenIndex
+      );
+      await waitForTransaction(tx.transaction_hash);
     } catch (e) {
       success = false;
-      changeIsLoading(false);
+      changeFailMsg("Withdraw failed");
     }
     changeIsLoading(false);
     if (success) {
@@ -58,23 +89,19 @@ const Withdraw = () => {
     }
   };
 
-  const handleApprove = async (e: any) => {
-    e.preventDefault();
-    changeIsLoading(true);
-    let success = true;
-    try {
-      const tx = await approveToken(tokenIndex);
-      const completed = await waitForTransaction(tx.transaction_hash);
-    } catch (e) {
-      success = false;
-      console.log(e);
-    }
-    if (success) changeIsLoading(false);
-    changeTxComplete(true);
-  };
-
   const handleIndicatorClose = () => {
     changeTxComplete(false);
+  };
+
+  const handleFailIndicatorClose = () => {
+    changeFailMsg("");
+  };
+
+  const getFPString = () => {
+    if (withdrawAmountDecimal.length > 0) {
+      return withdrawAmount + "." + withdrawAmountDecimal;
+    }
+    return withdrawAmount;
   };
 
   return (
@@ -89,6 +116,13 @@ const Withdraw = () => {
           onClose={handleIndicatorClose}
         />
       ) : null}
+      {failMsg.length ? (
+        <LoadingIndicator
+          closeable={true}
+          msg={failMsg}
+          onClose={handleFailIndicatorClose}
+        />
+      ) : null}
       <Pool />
       <div className={styles.row}>
         <div className={styles.transactionPart}>
@@ -99,7 +133,7 @@ const Withdraw = () => {
               className={styles.textbox}
               name="amount"
               aria-label="Set increment amount"
-              value={displayValue}
+              value={getFPString()}
               type="number"
             />
           </div>

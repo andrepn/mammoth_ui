@@ -11,22 +11,27 @@ import {
 } from "../../services/pool.service";
 import LoadingIndicator from "../../components/Indicator";
 import { waitForTransaction } from "../../services/wallet.service";
+import {
+  decimalToBN,
+  padDecimal,
+  toFloatingPoint,
+} from "../../core/floating-point";
 
 const Swap = () => {
-  const [swapAmount, changeAmount] = useState(BigNumber.from("0"));
-  const [LPAmount, changeLPAmount] = useState(BigNumber.from("0"));
+  const [swapAmount, changeAmount] = useState("0");
+  const [swapAmountDecimal, changeAmountDecimal] = useState("");
+  const [LPAmount, changeLPAmount] = useState("0");
   const [tokenInIndex, changeIndexIn] = useState(0);
   const [tokenOutIndex, changeIndexOut] = useState(1);
   const [isLoading, changeIsLoading] = useState(false);
+  const [loadingMsg, changeLoadingMsg] = useState("Awaiting Swap");
   const [txComplete, changeTxComplete] = useState(false);
+  const [txMessage, changeTxMsg] = useState("Swap Complete");
   const [isTokenApproved, changeTokenApproved] = useState(false);
-
-  const displayValue =
-    swapAmount.toString() === "0" ? "0" : swapAmount.toString();
+  const [failMsg, changeFailMsg] = useState("");
 
   const tokenApproval = useCallback(async () => {
     const res: BigNumber = await getTokeAllowance(tokenInIndex);
-    console.log(res);
     if (res.isZero()) {
       changeTokenApproved(false);
     } else {
@@ -40,22 +45,49 @@ const Swap = () => {
     })();
   });
 
+  const predictSwapResult = async (number: string, decimal: string) => {
+    const total = BigNumber.from(number).mul(10000).add(decimalToBN(decimal));
+    const amount = await getSwapAmount(
+      tokenInIndex,
+      tokenOutIndex,
+      total.toString()
+    );
+    changeLPAmount(toFloatingPoint(amount.toString()));
+  };
+
   const handleInputChange = async (e: any) => {
     e.preventDefault();
     const val = e.target.value;
-    if (val.length > 0 && !BigNumber.from(val).eq(0)) {
-      changeAmount(BigNumber.from(val));
-      const amount = await getSwapAmount(tokenInIndex, tokenOutIndex, val);
-      changeLPAmount(amount);
+    const parts = val.split(".");
+
+    const hasDecmial = swapAmountDecimal.length;
+
+    if (val.length > 0) {
+      let newNumber = "0";
+      if (parts[0].length) {
+        newNumber = parts[0];
+      }
+      changeAmount(newNumber);
+
+      let newDecimal = "";
+
+      if (parts[1]?.length) {
+        newDecimal = parts[1].substring(0, 4);
+      } else if (parts[1] === undefined && hasDecmial) {
+        newDecimal = "";
+      }
+      changeAmountDecimal(newDecimal);
+
+      await predictSwapResult(newNumber, newDecimal);
     } else {
-      changeAmount(BigNumber.from("0"));
+      changeAmount("0");
+      changeAmountDecimal("");
     }
   };
 
   const handleTokenInSelect = async (e: any) => {
     e.preventDefault();
     const val = e.target.value;
-    //await tokenApproval();
 
     const newTokenIn = parseInt(val);
     if (newTokenIn == tokenOutIndex) {
@@ -65,75 +97,105 @@ const Swap = () => {
     } else {
       changeIndexIn(val);
     }
+
+    await predictSwapResult(swapAmount, swapAmountDecimal);
   };
 
   const handleTokenOutSelect = async (e: any) => {
     e.preventDefault();
     const val = e.target.value;
-    //await tokenApproval();
 
     const newTokenOut = parseInt(val);
     if (newTokenOut === tokenInIndex) {
-      let temp = tokenOutIndex;
+      const temp = tokenOutIndex;
       changeIndexIn(temp);
       changeIndexOut(newTokenOut);
     } else {
       changeIndexOut(val);
     }
+    await predictSwapResult(swapAmount, swapAmountDecimal);
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     changeIsLoading(true);
+    changeLoadingMsg(
+      `Swapping ${tokens[tokenInIndex].symbol} for ${tokens[tokenOutIndex].symbol}`
+    );
+    changeTxMsg(
+      `Swap ${tokens[tokenInIndex].symbol} for ${tokens[tokenOutIndex].symbol} success`
+    );
     let success = true;
     try {
       const tx = await swapPool(
-        swapAmount.toString(),
+        swapAmount + padDecimal(swapAmountDecimal),
         tokenInIndex,
         tokenOutIndex
       );
 
-      const completed = await waitForTransaction(tx.transaction_hash);
+      await waitForTransaction(tx.transaction_hash);
     } catch (e) {
       success = false;
-      changeIsLoading(false);
+      changeFailMsg("Swap failed");
     }
     changeIsLoading(false);
     if (success) {
       changeTxComplete(true);
+      changeTokenApproved(true);
     }
   };
 
   const handleApprove = async (e: any) => {
     e.preventDefault();
     changeIsLoading(true);
+    changeLoadingMsg(`Approving ${tokens[tokenInIndex].symbol}`);
+    changeTxMsg(`${tokens[tokenOutIndex].symbol} approved`);
     let success = true;
     try {
-      console.log(tokenInIndex);
-      const tx = await approveToken(tokenInIndex);
-      const completed = await waitForTransaction(tx.transaction_hash);
+      await approveToken(tokenInIndex);
     } catch (e) {
       success = false;
-      console.log(e);
+      changeFailMsg("Approval failed");
     }
-    if (success) changeIsLoading(false);
-    changeTxComplete(true);
+    changeIsLoading(false);
+    if (success) {
+      changeTxComplete(true);
+      changeTokenApproved(true);
+    }
   };
 
   const handleIndicatorClose = () => {
     changeTxComplete(false);
   };
 
+  const handleFailIndicatorClose = () => {
+    changeFailMsg("");
+  };
+
+  const getFPString = () => {
+    if (swapAmountDecimal.length > 0) {
+      return swapAmount + "." + swapAmountDecimal;
+    }
+    return swapAmount;
+  };
+
   return (
     <div>
       {isLoading ? (
-        <LoadingIndicator msg={"Awaiting Swap"} isLoading={true} />
+        <LoadingIndicator msg={loadingMsg} isLoading={true} />
       ) : null}
       {txComplete ? (
         <LoadingIndicator
           closeable={true}
-          msg={"Swap Complete"}
+          msg={txMessage}
           onClose={handleIndicatorClose}
+        />
+      ) : null}
+      {failMsg.length ? (
+        <LoadingIndicator
+          closeable={true}
+          msg={failMsg}
+          onClose={handleFailIndicatorClose}
         />
       ) : null}
       <Pool />
@@ -153,7 +215,7 @@ const Swap = () => {
             className={styles.textbox}
             name="amount"
             aria-label="Set increment amount"
-            value={displayValue}
+            value={getFPString()}
             type="number"
           />
         </div>
