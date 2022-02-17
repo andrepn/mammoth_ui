@@ -7,6 +7,7 @@
   border-radius: 5px;
   border: solid 1px #e9e9e9;
   display: flex;
+  cursor: default;
 }
 
 .spinner {
@@ -19,6 +20,10 @@
   display: inline-block;
   box-sizing: border-box;
   animation: rotation 1s linear infinite;
+}
+
+.close {
+  cursor: pointer;
 }
 
 @keyframes rotation {

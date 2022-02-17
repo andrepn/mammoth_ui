@@ -20,7 +20,11 @@ const Indicator = (props: indicatorProps) => {
     <div className={styles.loading}>
       {msg}
       {isLoading ? <span className={styles.spinner}></span> : null}
-      {closeable ? <a onClick={onClose}>X</a> : null}
+      {closeable ? (
+        <a className={styles.close} onClick={onClose}>
+          X
+        </a>
+      ) : null}
     </div>
   );
 };

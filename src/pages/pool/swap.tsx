@@ -143,9 +143,9 @@ const Swap = () => {
             value={tokenInIndex.toString()}
             onChange={handleTokenInSelect}
           >
-            <option value="0">Token One</option>
-            <option value="1">Token Two</option>
-            <option value="2">Token Three</option>
+            <option value="0">FantieCoin</option>
+            <option value="1">testUSDC</option>
+            <option value="2">testETH</option>
           </select>
 
           <input
@@ -161,17 +161,17 @@ const Swap = () => {
 
       <div className={styles.row}>
         <div className={styles.transactionPart}>
-          <span className={styles.textspan}>Recieve</span>
+          <span className={styles.textspan}>Receive</span>
           <select
             value={tokenOutIndex.toString()}
             onChange={handleTokenOutSelect}
           >
-            <option value="0">Token One</option>
-            <option value="1">Token Two</option>
-            <option value="2">Token Three</option>
+            <option value="0">FantieCoin</option>
+            <option value="1">testUSDC</option>
+            <option value="2">testETH</option>
           </select>
 
-          <div className={styles.recievebox} aria-label="Set increment amount">
+          <div className={styles.Receivebox} aria-label="Set increment amount">
             {LPAmount.toString()}
             <span className={styles.textspangrey}>
               {tokens[tokenOutIndex].symbol}

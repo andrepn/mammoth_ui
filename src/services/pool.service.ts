@@ -1,7 +1,6 @@
 import { getStarknet } from "@argent/get-starknet";
 import { compileCalldata, number, stark, uint256 } from "starknet";
 import { BigNumber, BigNumberish, FixedNumber, utils } from "ethers";
-import { bnToUint256 } from "starknet/dist/utils/uint256";
 import { waitForTransaction } from "./wallet.service";
 
 const tokenOne = {
@@ -117,7 +116,7 @@ export const approveToken = async (
   if (starknet.isConnected === false)
     throw Error("starknet wallet not connected");
 
-  let uintAmount = normalizeAndUint256(amount);
+  let uintAmount = getUint256CalldataFromBN(amount);
   const tx = await starknet.signer.invokeFunction(
     tokens[tokenIndex].address,
     approveERC20Selector,
@@ -145,7 +144,7 @@ export const depositPool = async (
     routerAddress,
     depositSelector,
     compileCalldata({
-      amount: normalizeAndUint256(amount),
+      amount: getUint256CalldataFromBN(amount),
       user_address: activeAccount,
       pool_address: poolAddress,
       erc20_address: tokens[tokenIndex].address,
@@ -194,7 +193,7 @@ export const swapPool = async (
     routerAddress,
     swapSelector,
     compileCalldata({
-      amount: normalizeAndUint256(amount),
+      amount: getUint256CalldataFromBN(amount),
       user_address: activeAccount,
       pool_address: poolAddress,
       erc20_address_in: tokens[tokenIndex].address,
@@ -292,7 +291,7 @@ export const getSwapAmount = async (
     contract_address: poolAddress,
     entry_point_selector: swapAmountSelector,
     calldata: compileCalldata({
-      amount_in: normalizeAndUint256(amountIn),
+      amount_in: getUint256CalldataFromBN(amountIn),
       erc20_address_in: tokens[tokenInIndex].address,
       erc20_address_out: tokens[tokenOutIndex].address,
     }),
@@ -321,7 +320,7 @@ export const getDepositERC20Amount = async (
     contract_address: poolAddress,
     entry_point_selector: depositAmountSelector,
     calldata: compileCalldata({
-      amount_to_deposit: normalizeAndUint256(amountIn),
+      amount_to_deposit: getUint256CalldataFromBN(amountIn),
       erc20_address: tokens[tokenInIndex].address,
     }),
   });
@@ -348,7 +347,7 @@ export const getWithdrawERC20Amount = async (
     contract_address: poolAddress,
     entry_point_selector: withdrawAmountSelector,
     calldata: compileCalldata({
-      pool_amount_in: normalizeAndUint256(amountIn),
+      pool_amount_in: getUint256CalldataFromBN(amountIn),
       erc20_address: tokens[tokenInIndex].address,
     }),
   });

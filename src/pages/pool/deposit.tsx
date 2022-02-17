@@ -7,16 +7,27 @@ import {
   depositPool,
   getDepositERC20Amount,
   getTokeAllowance,
+  tokens,
 } from "../../services/pool.service";
 import LoadingIndicator from "../../components/Indicator";
 import { waitForTransaction } from "../../services/wallet.service";
+import {
+  decimalToBN,
+  padDecimal,
+  toFloatingPoint,
+} from "../../core/floating-point";
 
 const Deposit = () => {
-  const [depositAmount, changeAmount] = useState(BigNumber.from("0"));
-  const [LPAmount, changeLPAmount] = useState(BigNumber.from("0"));
+  const [depositAmount, changeAmount] = useState("0");
+  const [depositAmountDecimal, changeAmountDecimal] = useState("");
+
+  const [LPAmount, changeLPAmount] = useState("0");
   const [tokenIndex, changeIndex] = useState(0);
   const [isLoading, changeIsLoading] = useState(false);
+  const [loadingMsg, changeLoadingMsg] = useState("Awaiting Deposit");
   const [txComplete, changeTxComplete] = useState(false);
+  const [txMessage, changeTxMsg] = useState("Deposit Complete");
+  const [failMsg, changeFailMsg] = useState("");
   const [isTokenApproved, changeTokenApproved] = useState(false);
 
   const tokenApproval = useCallback(async () => {
@@ -37,15 +48,39 @@ const Deposit = () => {
   const displayValue =
     depositAmount.toString() === "0" ? "0" : depositAmount.toString();
 
+  const predictDepositResult = async (number: string, decimal: string) => {
+    const total = BigNumber.from(number).mul(10000).add(decimalToBN(decimal));
+    const amount = await getDepositERC20Amount(tokenIndex, total.toString());
+    changeLPAmount(toFloatingPoint(amount.toString()));
+  };
+
   const handleInputChange = async (e: any) => {
     e.preventDefault();
     const val = e.target.value;
-    if (val.length > 0 && !BigNumber.from(val).eq(0)) {
-      changeAmount(BigNumber.from(val));
-      const amount = await getDepositERC20Amount(tokenIndex, val);
-      changeLPAmount(amount);
+    const parts = val.split(".");
+
+    const hasDecmial = depositAmountDecimal.length;
+
+    if (val.length > 0) {
+      let newNumber = "0";
+      if (parts[0].length) {
+        newNumber = parts[0];
+      }
+      changeAmount(newNumber);
+
+      let newDecimal = "";
+
+      if (parts[1]?.length) {
+        newDecimal = parts[1].substring(0, 4);
+      } else if (parts[1] === undefined && hasDecmial) {
+        newDecimal = "";
+      }
+      changeAmountDecimal(newDecimal);
+
+      await predictDepositResult(newNumber, newDecimal);
     } else {
-      changeAmount(BigNumber.from("0"));
+      changeAmount("0");
+      changeAmountDecimal("");
     }
   };
 
@@ -54,19 +89,25 @@ const Deposit = () => {
     const val = e.target.value;
     //await tokenApproval();
     changeIndex(parseInt(val));
+    await predictDepositResult(depositAmount, depositAmountDecimal);
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     changeIsLoading(true);
+    changeLoadingMsg(`Depositing ${tokens[tokenIndex].symbol}`);
+    changeTxMsg(`Deposit ${tokens[tokenIndex].symbol} success`);
     let success = true;
     try {
-      const tx = await depositPool(depositAmount.toString(), tokenIndex);
+      const tx = await depositPool(
+        depositAmount + padDecimal(depositAmountDecimal),
+        tokenIndex
+      );
 
       const completed = await waitForTransaction(tx.transaction_hash);
     } catch (e) {
       success = false;
-      changeIsLoading(false);
+      changeFailMsg("Deposit failed");
     }
     changeIsLoading(false);
     if (success) {
@@ -77,59 +118,83 @@ const Deposit = () => {
 
   const handleApprove = async (e: any) => {
     e.preventDefault();
+
+    changeLoadingMsg(`Approving ${tokens[tokenIndex].symbol}`);
+    changeTxMsg(`${tokens[tokenIndex].symbol} approved`);
     changeIsLoading(true);
     let success = true;
     try {
-      const tx = await approveToken(tokenIndex);
-      const completed = await waitForTransaction(tx.transaction_hash);
+      await approveToken(tokenIndex);
     } catch (e) {
       success = false;
-      console.log(e);
+      changeFailMsg("Approval failed");
     }
-    if (success) changeIsLoading(false);
-    changeTxComplete(true);
+    changeIsLoading(false);
+    if (success) {
+      console.log("success");
+      changeTxComplete(true);
+      changeTokenApproved(true);
+    }
   };
 
   const handleIndicatorClose = () => {
     changeTxComplete(false);
   };
 
+  const handleFailIndicatorClose = () => {
+    changeFailMsg("");
+  };
+
+  const getFPString = () => {
+    if (depositAmountDecimal.length > 0) {
+      return depositAmount + "." + depositAmountDecimal;
+    }
+    return depositAmount;
+  };
+
   return (
     <div>
       {isLoading ? (
-        <LoadingIndicator msg={"Awaiting Deposit"} isLoading={true} />
+        <LoadingIndicator msg={loadingMsg} isLoading={true} />
       ) : null}
       {txComplete ? (
         <LoadingIndicator
           closeable={true}
-          msg={"Deposit Complete"}
+          msg={txMessage}
           onClose={handleIndicatorClose}
+        />
+      ) : null}
+      {failMsg.length ? (
+        <LoadingIndicator
+          closeable={true}
+          msg={failMsg}
+          onClose={handleFailIndicatorClose}
         />
       ) : null}
       <Pool />
       <div className={styles.row}>
         <div className={styles.transactionPart}>
           <select value={tokenIndex.toString()} onChange={handleTokenSelect}>
-            <option value="0">Token One</option>
-            <option value="1">Token Two</option>
-            <option value="2">Token Three</option>
+            <option value="0">FantieCoin</option>
+            <option value="1">testUSDC</option>
+            <option value="2">testETH</option>
           </select>
           <input
             onChange={handleInputChange}
             className={styles.textbox}
             name="amount"
             aria-label="Set increment amount"
-            value={displayValue}
+            value={getFPString()}
             type="number"
           />
         </div>
       </div>
       <div className={styles.row}>
         <div className={styles.transactionPart}>
-          <span className={styles.textspan}>Recieve</span>
+          <span className={styles.textspan}>Receive</span>
           <div>
             <div
-              className={styles.recievebox}
+              className={styles.Receivebox}
               aria-label="Set increment amount"
             >
               {LPAmount.toString()}
